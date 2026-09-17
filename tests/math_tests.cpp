@@ -1,4 +1,4 @@
-#include "../colormodel.h"
+#include "../colorcontroller.h"
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -119,6 +119,24 @@ void testCmykAndGamut()
          {0, 110.0 * 255 / 280, 255});
 }
 
+void testController()
+{
+    ColorController controller;
+    controller.setFromCmyk(.2, .3, .4, .1);
+    near(controller.getCmyk().k, .1);
+    controller.setFromLab(50, 120, 120);
+    near(controller.isOutOfGamut(), 1);
+    RgbColor clipped = controller.getRgb();
+    controller.setSettings(Illuminant::D65, CmykMethod::GCR, GamutStrategy::Scaling);
+    near(controller.getLab().a, 120);
+    near(controller.isOutOfGamut(), 1);
+    RgbColor scaled = controller.getRgb();
+    double difference = std::abs(clipped.r - scaled.r);
+    difference += std::abs(clipped.g - scaled.g);
+    difference += std::abs(clipped.b - scaled.b);
+    near(difference > 1, true);
+}
+
 int main()
 {
     try
@@ -126,6 +144,7 @@ int main()
         testEasyRgb();
         testRoundTrips();
         testCmykAndGamut();
+        testController();
         std::cout << "PASS: " << checks << " checks\n";
     }
     catch (const std::exception &error)
